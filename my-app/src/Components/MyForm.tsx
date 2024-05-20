@@ -260,7 +260,7 @@ const MyForm: React.FC = () => {
               <Form.Item
                 name="passport"
                 label={t("Passport")}
-                labelCol={{ span: 2 }}
+                labelCol={{ span: 3 }}
                 wrapperCol={{ span: 20 }}
                 rules={[
                   {
@@ -308,7 +308,12 @@ const MyForm: React.FC = () => {
           </Row>
         </Form>
       </div>
-      <Table columns={columns} dataSource={formDataList} rowKey="idCard" />
+      <Table
+        columns={columns}
+        dataSource={formDataList}
+        rowKey="idCard"
+        className="mt-[100px] mr-[400px] ml-[400px]"
+      />
     </div>
   );
 };
