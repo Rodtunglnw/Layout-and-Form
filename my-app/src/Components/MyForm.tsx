@@ -11,13 +11,12 @@ import {
   Table,
 } from "antd";
 import { useTranslation } from "react-i18next";
-import moment, { Moment } from "moment";
 
 interface FormData {
   prefix: string;
   firstname: string;
   lastname: string;
-  birthDate: Moment | string | null;
+  birthDate: string;
   nationality: string;
   idCard: string;
   gender: string;
@@ -30,41 +29,23 @@ const MyForm: React.FC = () => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [formDataList, setFormDataList] = useState<FormData[]>([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    const savedData: FormData[] = JSON.parse(
-      localStorage.getItem("formDataList") || "[]"
+    const getData: FormData[] = JSON.parse(
+      localStorage.getItem("formDataList")
     );
-    setFormDataList(savedData);
+    setFormDataList(getData);
   }, []);
 
-  const onFinish = (values: FormData) => {
-    const newDataList = [...formDataList];
-    values.birthDate = values.birthDate
-      ? (values.birthDate as Moment).format("YYYY-MM-DD")
-      : null;
-    if (editingIndex !== null && editingIndex >= 0) {
-      newDataList[editingIndex] = values;
-      setEditingIndex(null);
-    } else {
-      newDataList.push(values);
-    }
-    setFormDataList(newDataList);
-    localStorage.setItem("formDataList", JSON.stringify(newDataList));
+  const onFinish = (values: string) => {
+    const updateList = [...formDataList, values];
+    setFormDataList(updateList);
+    localStorage.setItem("formDataList", JSON.stringify(updateList));
+  };
+  const onReset = () => {
     form.resetFields();
-  };
-
-  const onEdit = (record: FormData, index: number) => {
-    record.birthDate = moment(record.birthDate as string, "YYYY-MM-DD");
-    form.setFieldsValue(record);
-    setEditingIndex(index);
-  };
-
-  const onDelete = (index: number) => {
-    const newDataList = formDataList.filter((_, i) => i !== index);
-    setFormDataList(newDataList);
-    localStorage.setItem("formDataList", JSON.stringify(newDataList));
+    localStorage.removeItem("formData");
+    setFormDataList([]);
   };
 
   const columns = [
@@ -93,8 +74,8 @@ const MyForm: React.FC = () => {
       dataIndex: "birthDate",
       key: "birthDate",
       sorter: (a: FormData, b: FormData) =>
-        moment(a.birthDate as string).unix() -
-        moment(b.birthDate as string).unix(),
+        new Date(a.birthDate as string).getTime() -
+        new Date(b.birthDate as string).getTime(),
     },
     {
       title: t("Nationality"),
@@ -126,44 +107,32 @@ const MyForm: React.FC = () => {
       dataIndex: "passport",
       key: "passport",
       sorter: (a: FormData, b: FormData) =>
-        (a.passport || "").localeCompare(b.passport || ""),
+        a.passport.localeCompare(b.passport),
     },
     {
       title: t("Expected Salary"),
       dataIndex: "expectedSalary",
       key: "expectedSalary",
       sorter: (a: FormData, b: FormData) =>
-        parseFloat(a.expectedSalary) - parseFloat(b.expectedSalary),
+        a.expectedSalary.localeCompare(b.expectedSalary),
     },
     {
       title: t("Action"),
       key: "action",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (_: any, record: FormData, index: number) => (
+      render: () => {
         <>
-          <Button onClick={() => onEdit(record, index)}>{t("Edit")}</Button>
-          <Button onClick={() => onDelete(index)}>{t("Delete")}</Button>
-        </>
-      ),
+          <Button>Edit</Button>
+          <Button>Delete</Button>
+        </>;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     },
   ];
-
-  const onReset = () => {
-    form.resetFields();
-    localStorage.removeItem("formData");
-  };
 
   return (
     <div>
       <div className="border-4 border-black mt-[150px] mr-[400px] ml-[400px] rounded-md">
-        <Form
-          form={form}
-          className="m-[20px]"
-          onFinish={onFinish}
-          onValuesChange={(_, values) =>
-            localStorage.setItem("formData", JSON.stringify(values))
-          }
-        >
+        <Form form={form} className="m-[20px]" onFinish={onFinish}>
           <Row gutter={12} justify="start">
             <Col span={4}>
               <Form.Item
@@ -293,6 +262,11 @@ const MyForm: React.FC = () => {
                 label={t("Passport")}
                 labelCol={{ span: 2 }}
                 wrapperCol={{ span: 20 }}
+                rules={[
+                  {
+                    required: true,
+                  },
+                ]}
               >
                 <Input maxLength={9} placeholder={t("Passport")} />
               </Form.Item>
